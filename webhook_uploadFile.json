@@ -1,0 +1,219 @@
+{
+  "name": "JANUS-Subir-doc",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "={{ $json.body.tenant_id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -140
+      ],
+      "id": "c6a5ea34-9195-45c7-85fc-a004b46bbbf4",
+      "name": "Qdrant Vector Store",
+      "credentials": {
+        "qdrantApi": {
+          "id": "HIp1HmA4huU5O9Ie",
+          "name": "QdrantApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.body.text }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "file_id",
+                "value": "={{ $json.file_id }}"
+              },
+              {
+                "name": "filename",
+                "value": "={{ $json.body.filename }}"
+              },
+              {
+                "name": "created_by",
+                "value": "={{ $json.body.user_id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        180,
+        40
+      ],
+      "id": "c35fa499-19af-4c51-9c61-ceddff477938",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 100,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        200,
+        220
+      ],
+      "id": "ee930d0e-2caa-48b5-b744-f836ff1fb87b",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "value": "={{ $json.body.filename }}",
+        "dataPropertyName": "file_id"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -120
+      ],
+      "id": "86c4b80a-c25a-4034-9cb7-6a8a2e0a1585",
+      "name": "Crypto"
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        120
+      ],
+      "id": "b166eb65-0acd-4853-a49a-d1808b167cf4",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "IiLhud6N0AssxEob",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": ":tenant_id/documents/upload",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -120
+      ],
+      "id": "17835cc8-aac9-407d-b38c-9631f2a59653",
+      "name": "Webhook",
+      "webhookId": "4faec44a-cbe1-46bf-b48d-a161ea91c48e"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        340,
+        -140
+      ],
+      "id": "c4030c12-5391-4f0e-9014-410c8ee97851",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto": {
+      "main": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Crypto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cec7a339-4ba3-4a16-b202-c90dd5554211",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9d8eedd20651fb5c33165dc8591bab2eaa34bf258cbb03768c9a2348334809d1"
+  },
+  "id": "d8f2gF6NFNsTXK1N",
+  "tags": []
+}
